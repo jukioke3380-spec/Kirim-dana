@@ -1,0 +1,6 @@
+{
+  "name": "kirim dana",
+  "description": "Aplikasi PWA cetak struk transfer & OCR lokal bukti transaksi finansial untuk agen dan konter pembayaran.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

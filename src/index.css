@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .font-receipt {
+    font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+  }
+}
+
+/* Custom scrollbar hiding for horizontal tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Thermal receipt paper serrated edge effect */
+.receipt-jagged-edge {
+  background: radial-gradient(circle, transparent, transparent 50%, #ffffff 50%, #ffffff 100%);
+  background-size: 14px 14px;
+}
+
+/* Safe area support for notch / home indicator on Android & iOS */
+.safe-pb {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
