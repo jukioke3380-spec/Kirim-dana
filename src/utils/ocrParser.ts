@@ -341,6 +341,8 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
     totalAmount,
     notes,
     agentName: settings.defaultAgentName || 'loket ppob Athar digital payment',
+    agentTagline: settings.defaultAgentTagline || 'gerai transaksi online & multi pembayaran',
+    agentServices: settings.defaultAgentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan',
     agentLocation: settings.defaultAgentLocation || 'Bekasi, Jawa Barat',
     agentContact: settings.defaultAgentContact || '0812-3456-7890',
     status: 'BERHASIL',

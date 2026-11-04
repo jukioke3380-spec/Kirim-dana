@@ -81,8 +81,13 @@ export async function shareReceiptImage(
  * Format receipt text for WhatsApp caption
  */
 export function buildWhatsAppCaption(receipt: ReceiptData): string {
+  const tagline = receipt.agentTagline || 'gerai transaksi online & multi pembayaran';
+  const services = receipt.agentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan';
+
   return `*BUKTI TRANSFER DANA*
-*${receipt.agentName}*
+*${receipt.agentName || 'loket ppob Athar digital payment'}*
+_${tagline}_
+_${services}_
 --------------------------------
 *Status:* ${receipt.status}
 *Tanggal:* ${receipt.date} ${receipt.time} WIB

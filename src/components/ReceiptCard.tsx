@@ -46,11 +46,22 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
             </h2>
             {!isPrintMode && <Edit3 className="w-3.5 h-3.5 text-sky-400 opacity-60 group-hover:opacity-100" />}
           </div>
-          <p className="text-xs text-slate-500 font-sans font-medium">
+
+          {/* Subheading / Tagline & Services requested by user */}
+          <div className="space-y-0.5 mb-1.5">
+            <p className="text-[11px] sm:text-xs font-extrabold text-sky-800 uppercase tracking-wide">
+              {receipt.agentTagline || settings.defaultAgentTagline || 'gerai transaksi online & multi pembayaran'}
+            </p>
+            <p className="text-[10px] sm:text-[11px] text-slate-600 font-sans font-medium capitalize">
+              {receipt.agentServices || settings.defaultAgentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan'}
+            </p>
+          </div>
+
+          <p className="text-[11px] text-slate-500 font-sans font-medium">
             {receipt.agentLocation || 'Bekasi, Jawa Barat'}
           </p>
           {receipt.agentContact && (
-            <p className="text-[11px] text-slate-400 font-sans">
+            <p className="text-[10px] text-slate-400 font-sans">
               WA / CS: {receipt.agentContact}
             </p>
           )}

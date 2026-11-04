@@ -118,8 +118,12 @@ export function buildReceiptEscPos(receipt: ReceiptData, settings: AppSettings):
   // Header
   encoder.align('center');
   encoder.bold(true).size('double').line(receipt.agentName || 'LOKET PPOB ATHAR DIGITAL PAYMENT').size('normal');
+  const tagline = receipt.agentTagline || settings.defaultAgentTagline || 'gerai transaksi online & multi pembayaran';
+  const services = receipt.agentServices || settings.defaultAgentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan';
+  encoder.bold(true).line(tagline.toUpperCase());
+  encoder.bold(false).line(services);
   if (receipt.agentLocation) {
-    encoder.bold(false).line(receipt.agentLocation);
+    encoder.line(receipt.agentLocation);
   }
   if (receipt.agentContact) {
     encoder.line(`Telp/WA: ${receipt.agentContact}`);
@@ -188,6 +192,8 @@ export function buildTestPrintEscPos(settings: AppSettings): Uint8Array {
   encoder.align('center');
   encoder.bold(true).size('double').line('TEST PRINTER').size('normal');
   encoder.line(settings.defaultAgentName || 'LOKET PPOB ATHAR DIGITAL PAYMENT');
+  encoder.line(settings.defaultAgentTagline || 'gerai transaksi online & multi pembayaran');
+  encoder.line(settings.defaultAgentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan');
   encoder.divider('=', cols);
   encoder.line('Koneksi Bluetooth Berhasil!');
   encoder.line(`Ukuran Kertas: ${settings.paperSize}`);

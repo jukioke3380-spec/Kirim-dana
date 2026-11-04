@@ -360,6 +360,32 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Keterangan Gerai / Tagline (Di bawah nama agen)
+              </label>
+              <input
+                type="text"
+                value={formData.agentTagline || ''}
+                onChange={(e) => handleChange('agentTagline', e.target.value)}
+                placeholder="gerai transaksi online & multi pembayaran"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-semibold outline-hidden"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Layanan Gerai (Di bawah tagline)
+              </label>
+              <input
+                type="text"
+                value={formData.agentServices || ''}
+                onChange={(e) => handleChange('agentServices', e.target.value)}
+                placeholder="layanan transfer uang tarik tunai & pembayaran tagihan"
+                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-hidden"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Keterangan / Catatan Tambahan
               </label>
               <input
