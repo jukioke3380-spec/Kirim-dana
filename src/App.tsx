@@ -17,7 +17,16 @@ export default function App() {
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
       const saved = localStorage.getItem('kirim-dana-settings');
-      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Automatically migrate old default to new default
+        if (parsed.defaultAgentName === 'Agen Batara Bekasi' || !parsed.defaultAgentName) {
+          parsed.defaultAgentName = 'loket ppob Athar digital payment';
+          localStorage.setItem('kirim-dana-settings', JSON.stringify({ ...DEFAULT_SETTINGS, ...parsed }));
+        }
+        return { ...DEFAULT_SETTINGS, ...parsed };
+      }
+      return DEFAULT_SETTINGS;
     } catch (e) {
       return DEFAULT_SETTINGS;
     }
@@ -35,7 +44,6 @@ export default function App() {
 
   // Active Receipt state (initialize with first sample for immediate instant testing)
   const [currentReceipt, setCurrentReceipt] = useState<ReceiptData | null>(() => {
-    const sample = SAMPLE_RECEIPTS[0];
     return {
       id: 'init_' + Date.now(),
       date: getCurrentDateStr(),
@@ -48,7 +56,7 @@ export default function App() {
       adminFee: 5000,
       totalAmount: 355000,
       notes: 'Bayar sewa bulanan',
-      agentName: 'Agen Batara Bekasi',
+      agentName: 'loket ppob Athar digital payment',
       agentLocation: 'Bekasi, Jawa Barat',
       agentContact: '0812-3456-7890',
       status: 'BERHASIL',

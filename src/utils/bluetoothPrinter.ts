@@ -117,7 +117,7 @@ export function buildReceiptEscPos(receipt: ReceiptData, settings: AppSettings):
 
   // Header
   encoder.align('center');
-  encoder.bold(true).size('double').line(receipt.agentName || 'AGEN BATARA BEKASI').size('normal');
+  encoder.bold(true).size('double').line(receipt.agentName || 'LOKET PPOB ATHAR DIGITAL PAYMENT').size('normal');
   if (receipt.agentLocation) {
     encoder.bold(false).line(receipt.agentLocation);
   }
@@ -187,7 +187,7 @@ export function buildTestPrintEscPos(settings: AppSettings): Uint8Array {
   const encoder = new EscPosEncoder();
   encoder.align('center');
   encoder.bold(true).size('double').line('TEST PRINTER').size('normal');
-  encoder.line(settings.defaultAgentName || 'AGEN BATARA BEKASI');
+  encoder.line(settings.defaultAgentName || 'LOKET PPOB ATHAR DIGITAL PAYMENT');
   encoder.divider('=', cols);
   encoder.line('Koneksi Bluetooth Berhasil!');
   encoder.line(`Ukuran Kertas: ${settings.paperSize}`);

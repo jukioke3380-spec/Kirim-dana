@@ -10,7 +10,7 @@ export interface ReceiptData {
   adminFee: number; // e.g. 5000
   totalAmount: number; // amount + adminFee
   notes: string; // e.g. "Transfer Berhasil"
-  agentName: string; // e.g. "Agen Batara Bekasi"
+  agentName: string; // e.g. "loket ppob Athar digital payment"
   agentLocation: string; // e.g. "Bekasi, Jawa Barat"
   agentContact: string; // e.g. "0812-3456-7890"
   status: 'BERHASIL' | 'SUKSES' | 'SELESAI';
@@ -33,7 +33,7 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  defaultAgentName: 'Agen Batara Bekasi',
+  defaultAgentName: 'loket ppob Athar digital payment',
   defaultAgentLocation: 'Bekasi, Jawa Barat',
   defaultAgentContact: '0812-3456-7890',
   defaultAdminFee: 5000,

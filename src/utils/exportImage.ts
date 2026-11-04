@@ -98,5 +98,5 @@ Nominal: ${formatRupiah(receipt.amount)}
 Biaya Admin: ${formatRupiah(receipt.adminFee)}
 *TOTAL DIBAYAR:* *${formatRupiah(receipt.totalAmount)}*
 --------------------------------
-_Terima kasih telah bertransaksi di Agen Batara Bekasi._`;
+_Terima kasih telah bertransaksi di ${receipt.agentName || 'loket ppob Athar digital payment'}._`;
 }

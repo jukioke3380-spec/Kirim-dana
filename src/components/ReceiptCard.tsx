@@ -42,7 +42,7 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
         >
           <div className="flex items-center justify-center gap-1.5 mb-1">
             <h2 className="text-base sm:text-lg font-black tracking-tight text-slate-900 uppercase">
-              {receipt.agentName || 'AGEN BATARA BEKASI'}
+              {receipt.agentName || 'loket ppob Athar digital payment'}
             </h2>
             {!isPrintMode && <Edit3 className="w-3.5 h-3.5 text-sky-400 opacity-60 group-hover:opacity-100" />}
           </div>

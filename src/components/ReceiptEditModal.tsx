@@ -353,7 +353,7 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
                 type="text"
                 value={formData.agentName}
                 onChange={(e) => handleChange('agentName', e.target.value)}
-                placeholder="Contoh: Agen Batara Bekasi"
+                placeholder="Contoh: loket ppob Athar digital payment"
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold outline-hidden"
               />
             </div>

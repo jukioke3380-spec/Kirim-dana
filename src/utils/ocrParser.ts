@@ -340,7 +340,7 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
     adminFee,
     totalAmount,
     notes,
-    agentName: settings.defaultAgentName || 'Agen Batara Bekasi',
+    agentName: settings.defaultAgentName || 'loket ppob Athar digital payment',
     agentLocation: settings.defaultAgentLocation || 'Bekasi, Jawa Barat',
     agentContact: settings.defaultAgentContact || '0812-3456-7890',
     status: 'BERHASIL',
