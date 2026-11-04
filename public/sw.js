@@ -1,5 +1,5 @@
 // Service Worker for "kirim dana" PWA
-const CACHE_NAME = 'kirim-dana-v1';
+const CACHE_NAME = 'kirim-dana-v5';
 const SHARED_CACHE_NAME = 'kirim-dana-shared';
 
 const PRECACHE_ASSETS = [
@@ -64,45 +64,43 @@ self.addEventListener('fetch', (event) => {
       } catch (error) {
         console.error('Failed to process shared image in service worker:', error);
       }
-      // Redirect to home screen with query parameter indicating shared image is ready
       return Response.redirect('/?shared=1', 303);
     })());
     return;
   }
 
-  // Handle standard GET requests
+  // Handle GET requests with Network-First strategy
   if (event.request.method === 'GET') {
     // For navigation requests (HTML pages)
     if (event.request.mode === 'navigate') {
       event.respondWith(
-        fetch(event.request).catch(async () => {
-          const cached = await caches.match('/index.html') || await caches.match('/');
-          return cached || new Response('Offline - kirim dana', { status: 200, headers: { 'Content-Type': 'text/html' } });
-        })
+        fetch(event.request)
+          .then((response) => {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            return response;
+          })
+          .catch(async () => {
+            const cached = await caches.match('/index.html') || await caches.match('/');
+            return cached || new Response('Offline - kirim dana', { status: 200, headers: { 'Content-Type': 'text/html' } });
+          })
       );
       return;
     }
 
-    // For static scripts, fonts, images, stylesheets
+    // Network-First for JS, CSS, and other assets to avoid stale caching during updates
     event.respondWith(
-      caches.match(event.request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(event.request).then((networkResponse) => {
-          // Cache successful GET responses from our origin or CDNs
+      fetch(event.request)
+        .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
           return networkResponse;
-        }).catch(() => {
-          // Offline fallback
-          return cachedResponse;
-        });
-      })
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
     );
   }
 });

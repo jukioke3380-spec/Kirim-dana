@@ -88,15 +88,15 @@ export async function preprocessImage(imageSource: string | File | Blob): Promis
         const imgData = ctx.getImageData(0, 0, width, height);
         const d = imgData.data;
 
-        // Grayscale & contrast enhancement
+        // Grayscale & gentle contrast enhancement
         for (let i = 0; i < d.length; i += 4) {
           const r = d[i];
           const g = d[i + 1];
           const b = d[i + 2];
           // Luminance formula
           let gray = 0.299 * r + 0.587 * g + 0.114 * b;
-          // Contrast stretch
-          gray = (gray - 128) * 1.35 + 128;
+          // Gentle contrast (1.1 instead of 1.35 to avoid blowing out watermark background)
+          gray = (gray - 128) * 1.1 + 128;
           gray = Math.max(0, Math.min(255, gray));
 
           d[i] = gray;
@@ -105,10 +105,11 @@ export async function preprocessImage(imageSource: string | File | Blob): Promis
         }
 
         ctx.putImageData(imgData, 0, 0);
-        resolve(canvas.toDataURL('image/jpeg', 0.92));
+        // Lossless PNG for crisp OCR character recognition
+        resolve(canvas.toDataURL('image/png'));
       } catch (e) {
-        // Fallback to data URL if canvas tainted
-        resolve(canvas.toDataURL('image/jpeg', 0.92));
+        // Fallback to PNG
+        resolve(canvas.toDataURL('image/png'));
       }
     };
 
@@ -177,8 +178,8 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
   // Having this first prevents ref digits from being mistakenly extracted as account number!
   let refNumber = '';
   const refPatterns = [
-    /(?:NO\.?\s*REF(?:ERENSI)?|ID TRANSAKSI|TRANSACTION ID|NO\.?\s*RESI|KODE REFERENSI|NO JURNAL|REF NO)\s*[:=\-|]?\s*([A-Za-z0-9\-_]{6,30})/i,
-    /\b([0-9]{12,24})\b/,
+    /(?:NO\.?\s*REF(?:ERENSI)?|ID\s+TRANSAKSI|TRANSACTION\s+ID|NO\.?\s*RESI|KODE\s+REFERENSI|NO\.?\s*JURNAL|REF\s*NO)\s*[:=\-|]?\s*([A-Za-z0-9\-_]{6,30})/i,
+    /(?:REF|RESI|ID)\s*[:=\-|]\s*([0-9]{8,24})/i,
   ];
 
   for (const pat of refPatterns) {
@@ -192,21 +193,20 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
   const cleanRefDigits = refNumber.replace(/[^0-9]/g, '');
 
   // 3. Locate Destination Section ("TUJUAN" / "TRANSFER KE" / "PENERIMA" / "REKENING TUJUAN")
-  const tujuanIdx = lines.findIndex((l) =>
-    /^TUJUAN\b/i.test(l) ||
-    /^TRANSFER\s+KE\b/i.test(l) ||
-    /^PENERIMA\b/i.test(l) ||
-    /^REKENING\s+TUJUAN\b/i.test(l) ||
-    /^KE\s+REKENING\b/i.test(l) ||
-    /^KE\b/i.test(l)
-  );
+  const tujuanIdx = lines.findIndex((l) => {
+    const cleanL = l.replace(/^[^a-zA-Z0-9]+/, '').trim();
+    return (
+      /^(TUJUAN|TRANSFER\s+KE|PENERIMA|REKENING\s+TUJUAN|KE\s+REKENING)\b/i.test(cleanL) ||
+      /\bTUJUAN\b/i.test(cleanL)
+    ) && !/SUMBER/i.test(cleanL);
+  });
 
   const tujuanLines: string[] = [];
   if (tujuanIdx !== -1) {
-    for (let i = tujuanIdx + 1; i < Math.min(tujuanIdx + 7, lines.length); i++) {
+    // Check line itself (if it contains data after "Tujuan") and subsequent lines
+    for (let i = tujuanIdx; i < Math.min(tujuanIdx + 7, lines.length); i++) {
       const line = lines[i];
-      // Stop when hitting other section headers
-      if (/^(Jenis\s+Transaksi|Catatan|Nominal|Biaya|Total|INFORMASI|Sumber\s+Dana|Detail\s+Transaksi|Waktu)/i.test(line)) {
+      if (i > tujuanIdx && /^(Jenis\s+Transaksi|Catatan|Nominal|Biaya|Total|INFORMASI|Sumber\s+Dana|Detail\s+Transaksi|Waktu)/i.test(line)) {
         break;
       }
       tujuanLines.push(line);
@@ -220,7 +220,7 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
   // Matches grouped numbers like "1160 0101 6845 502" or continuous "116001016845502"
   if (tujuanLines.length > 0) {
     for (const line of tujuanLines) {
-      const digitsMatch = line.match(/(?:\b[0-9]{2,6}[\s\-][0-9]{2,6}[\s\-][0-9]{2,6}(?:[\s\-][0-9]{2,6})?\b|\b[0-9]{8,18}\b)/);
+      const digitsMatch = line.match(/(?:\b[0-9]{2,6}[\s\-]+){1,5}[0-9]{2,6}\b|\b[0-9]{8,20}\b/);
       if (digitsMatch) {
         const raw = digitsMatch[0].replace(/[^0-9]/g, '');
         // Must have at least 8 digits and not be the reference number
@@ -255,7 +255,7 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
 
         // Check same line or next line
         const targetCandidate = lines[i + 1] || '';
-        const m = targetCandidate.match(/(?:\b[0-9]{2,6}[\s\-][0-9]{2,6}[\s\-][0-9]{2,6}(?:[\s\-][0-9]{2,6})?\b|\b[0-9]{8,18}\b)/);
+        const m = targetCandidate.match(/(?:\b[0-9]{2,6}[\s\-]+){1,5}[0-9]{2,6}\b|\b[0-9]{8,20}\b/);
         if (m) {
           const raw = m[0].replace(/[^0-9]/g, '');
           if (raw.length >= 8 && raw !== cleanRefDigits) {
@@ -267,13 +267,13 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
     }
   }
 
-  // Priority D: Find any 8-18 digit sequence not matching refNumber, masked source account, or NPWP
+  // Priority D: Find any 8-20 digit sequence not matching refNumber, masked source account, or NPWP
   if (!accountNumber) {
-    const allMatches = cleanText.matchAll(/(?:\b[0-9]{2,6}[\s\-][0-9]{2,6}[\s\-][0-9]{2,6}(?:[\s\-][0-9]{2,6})?\b|\b[0-9]{8,18}\b)/g);
+    const allMatches = cleanText.matchAll(/(?:\b[0-9]{2,6}[\s\-]+){1,5}[0-9]{2,6}\b|\b[0-9]{8,20}\b/g);
     for (const match of allMatches) {
       const cand = match[0].trim();
       const raw = cand.replace(/[^0-9]/g, '');
-      // Exclude ref number, NPWP (010016087...), and short numbers
+      // Exclude ref number, NPWP (010016087...), and masked numbers
       if (raw.length >= 8 && raw !== cleanRefDigits && !raw.startsWith('010016087') && !cand.includes('*')) {
         accountNumber = cand.replace(/\s+/g, ' ').trim();
         break;
@@ -292,6 +292,23 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
   // If still not found, leave as empty string or dash (NEVER inject fake/dummy account numbers!)
   if (!accountNumber) {
     accountNumber = '-';
+  }
+
+  // CRITICAL CHECK: Destination account number must NEVER be equal to the Reference Number!
+  if (accountNumber && cleanRefDigits && accountNumber.replace(/[^0-9]/g, '') === cleanRefDigits) {
+    accountNumber = '';
+    const allMatches = cleanText.matchAll(/(?:\b[0-9]{2,6}[\s\-]+){1,5}[0-9]{2,6}\b|\b[0-9]{8,20}\b/g);
+    for (const match of allMatches) {
+      const cand = match[0].trim();
+      const raw = cand.replace(/[^0-9]/g, '');
+      if (raw !== cleanRefDigits && raw.length >= 8 && !raw.startsWith('010016087') && !cand.includes('*')) {
+        accountNumber = cand.replace(/\s+/g, ' ').trim();
+        break;
+      }
+    }
+    if (!accountNumber) {
+      accountNumber = '-';
+    }
   }
 
   // 5. Extract Recipient Name (Nama Penerima)
@@ -436,9 +453,12 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
   let notes = 'Transfer Berhasil';
   const notesMatch = cleanText.match(/(?:CATATAN|BERITA|KETERANGAN|PESAN)\s*[:=\-|]?\s*([^\n\r]+)/i);
   if (notesMatch && notesMatch[1]) {
-    const candidateNotes = notesMatch[1].trim();
-    if (candidateNotes !== '-' && candidateNotes.length > 1) {
-      notes = candidateNotes;
+    const rawCandidate = notesMatch[1].replace(/^[-–—:\s|]+/, '').trim();
+    if (
+      rawCandidate.length > 1 &&
+      !/^(NOMINAL|BIAYA|TOTAL|RP|TRANSFER|JENIS|INFORMASI)/i.test(rawCandidate)
+    ) {
+      notes = rawCandidate;
     }
   }
 
