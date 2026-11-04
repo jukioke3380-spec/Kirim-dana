@@ -93,7 +93,10 @@ _${services}_
 *Tanggal:* ${receipt.date} ${receipt.time} WIB
 *No. Ref:* ${receipt.refNumber}
 --------------------------------
-*DETAIL TUJUAN:*
+${receipt.senderName || receipt.senderAccount ? `*SUMBER DANA (PENGIRIM):*
+Nama Pengirim: *${receipt.senderName || '-'}*
+${receipt.senderBank ? `Bank Asal: *${receipt.senderBank}*\n` : ''}${receipt.senderAccount ? `No. Rekening: *${receipt.senderAccount}*\n` : ''}--------------------------------
+` : ''}*DETAIL TUJUAN:*
 Bank/E-Wallet: *${receipt.bankName}*
 No. Rekening: *${receipt.accountNumber}*
 Nama Penerima: *${receipt.recipientName}*

@@ -3,6 +3,12 @@ export interface ReceiptData {
   date: string; // e.g. "01/11/2026"
   time: string; // e.g. "14:35:12"
   refNumber: string; // e.g. "KD-20261101-7821"
+  // Sumber Dana (Pengirim)
+  senderName?: string; // e.g. "M. CHASIN ZAUHARI"
+  senderAccount?: string; // e.g. "6305 **** **** 530"
+  senderBank?: string; // e.g. "BANK BRI"
+
+  // Detail Tujuan Transfer
   recipientName: string; // e.g. "BUDI SANTOSO"
   bankName: string; // e.g. "BCA" or "DANA"
   accountNumber: string; // e.g. "887012345678"

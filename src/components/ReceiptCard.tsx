@@ -110,6 +110,56 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
           </div>
         </div>
 
+        {/* 3b. Sumber Dana (Pengirim) */}
+        {(receipt.senderName || receipt.senderAccount || receipt.senderBank) ? (
+          <div className="py-3 border-b border-dashed border-slate-200 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">
+                Sumber Dana (Pengirim)
+              </span>
+              {receipt.senderBank && (
+                <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-sans">
+                  {receipt.senderBank}
+                </span>
+              )}
+            </div>
+
+            {/* Nama Rekening Pengirim */}
+            {receipt.senderName && (
+              <div
+                onClick={() => handleTap('senderName')}
+                className={`flex justify-between items-start text-xs ${tapClass}`}
+              >
+                <span className="text-slate-600 shrink-0">Nama Pengirim</span>
+                <span className="font-bold text-slate-900 text-right uppercase max-w-[170px] break-words">
+                  {receipt.senderName}
+                </span>
+              </div>
+            )}
+
+            {/* Rekening Pengirim */}
+            {receipt.senderAccount && (
+              <div
+                onClick={() => handleTap('senderAccount')}
+                className={`flex justify-between items-center text-xs ${tapClass}`}
+              >
+                <span className="text-slate-600">No. Rekening Asal</span>
+                <span className="font-semibold text-slate-800 tracking-wider">
+                  {receipt.senderAccount}
+                </span>
+              </div>
+            )}
+          </div>
+        ) : !isPrintMode ? (
+          <div
+            onClick={() => handleTap('senderName')}
+            className="py-2 border-b border-dashed border-slate-200 flex justify-between items-center text-xs text-sky-600 hover:text-sky-700 cursor-pointer"
+          >
+            <span className="text-[11px] font-semibold">+ Tambah Sumber Dana (Pengirim)</span>
+            <Edit3 className="w-3 h-3" />
+          </div>
+        ) : null}
+
         {/* 4. Detail Tujuan Transfer (Wajib ada) */}
         <div className="py-3 border-b border-dashed border-slate-200 space-y-2">
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ReceiptData } from '../types/receipt';
 import { KNOWN_BANKS } from '../utils/ocrParser';
 import { formatRupiah, generateRefNumber, getCurrentDateStr, getCurrentTimeStr, parseRupiahInput } from '../utils/numberFormat';
-import { X, RefreshCw, Clock, Check, Sparkles, Building2, User, Hash } from 'lucide-react';
+import { X, RefreshCw, Clock, Check, Sparkles, Building2, User, Hash, Wallet } from 'lucide-react';
 
 interface ReceiptEditModalProps {
   isOpen: boolean;
@@ -84,6 +84,69 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
 
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="overflow-y-auto px-5 py-4 space-y-4 text-sm">
+          {/* Section 0: Sumber Dana (Pengirim) */}
+          <div className="space-y-3 bg-sky-50/50 p-3.5 rounded-xl border border-sky-100">
+            <h4 className="text-xs font-bold text-sky-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Wallet className="w-3.5 h-3.5 text-sky-600" />
+              Sumber Dana (Pengirim)
+            </h4>
+
+            {/* Nama Rekening Pengirim */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Nama Rekening Pengirim
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={formData.senderName || ''}
+                  onChange={(e) => handleChange('senderName', e.target.value)}
+                  placeholder="Contoh: M. CHASIN ZAUHARI"
+                  className="flex-1 px-3 py-2 rounded-lg border border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 text-sm font-semibold uppercase outline-hidden"
+                  autoFocus={initialFocusField === 'senderName'}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleChange('senderName', (formData.senderName || '').toUpperCase())}
+                  className="px-2.5 py-1 text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition-colors"
+                  title="Ubah jadi huruf besar"
+                >
+                  CAPS
+                </button>
+              </div>
+            </div>
+
+            {/* Bank Pengirim & Rekening Pengirim */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Bank Asal Pengirim
+                </label>
+                <input
+                  type="text"
+                  value={formData.senderBank || ''}
+                  onChange={(e) => handleChange('senderBank', e.target.value.toUpperCase())}
+                  placeholder="Contoh: BANK BRI"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 text-sm font-bold uppercase outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  No. Rekening Pengirim
+                </label>
+                <input
+                  type="text"
+                  value={formData.senderAccount || ''}
+                  onChange={(e) => handleChange('senderAccount', e.target.value)}
+                  placeholder="Contoh: 6305 **** **** 530"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 text-sm font-receipt font-semibold outline-hidden"
+                  autoFocus={initialFocusField === 'senderAccount'}
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Section 1: Detail Tujuan Transfer */}
           <div className="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200/80">
             <h4 className="text-xs font-bold text-sky-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -150,16 +213,24 @@ export const ReceiptEditModal: React.FC<ReceiptEditModalProps> = ({
 
             {/* Nomor Rekening */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Nomor Rekening / No. HP E-Wallet
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-semibold text-slate-700">
+                  Nomor Rekening / No. HP E-Wallet
+                </label>
+                {formData.accountNumber && (
+                  <span className="text-[10px] font-bold text-sky-700 bg-sky-100 px-1.5 py-0.5 rounded font-sans">
+                    {formData.accountNumber.replace(/[^0-9]/g, '').length} Digit {formData.accountNumber.replace(/[^0-9]/g, '').length === 15 ? '(BRI Lengkap)' : ''}
+                  </span>
+                )}
+              </div>
               <div className="relative">
                 <input
                   type="text"
                   value={formData.accountNumber}
                   onChange={(e) => handleChange('accountNumber', e.target.value)}
-                  placeholder="Contoh: 887012345678"
+                  placeholder="Contoh: 1160 0101 6845 502 (15 digit BRI)"
                   className="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 text-sm font-receipt font-semibold outline-hidden"
+                  autoFocus={initialFocusField === 'accountNumber'}
                 />
                 <Hash className="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" />
               </div>

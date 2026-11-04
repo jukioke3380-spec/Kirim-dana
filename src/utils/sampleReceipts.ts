@@ -89,6 +89,9 @@ Catatan -
 Nominal Rp250.000
 Biaya Admin Rpo`,
     defaultData: {
+      senderName: 'M. CHASIN ZAUHARI',
+      senderBank: 'BANK BRI',
+      senderAccount: '6305 **** **** 530',
       bankName: 'BRI',
       recipientName: 'ALDIANTO DONNY PRANA',
       accountNumber: '1160 0101 6845 502',

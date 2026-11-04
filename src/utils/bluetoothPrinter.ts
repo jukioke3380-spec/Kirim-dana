@@ -141,8 +141,17 @@ export function buildReceiptEscPos(receipt: ReceiptData, settings: AppSettings):
   encoder.twoColumns('Tanggal', receipt.date, cols);
   encoder.twoColumns('Waktu', receipt.time + ' WIB', cols);
   encoder.twoColumns('No. Ref', receipt.refNumber, cols);
-  encoder.twoColumns('Sumber', receipt.sourceApp || 'Transfer Bank', cols);
+  encoder.twoColumns('Metode', receipt.sourceApp || 'Transfer Bank', cols);
   encoder.divider('-', cols);
+
+  // Source of Funds details (Sumber Dana)
+  if (receipt.senderName || receipt.senderAccount || receipt.senderBank) {
+    encoder.bold(true).line('SUMBER DANA (PENGIRIM):').bold(false);
+    if (receipt.senderName) encoder.twoColumns('Pengirim', receipt.senderName, cols);
+    if (receipt.senderBank) encoder.twoColumns('Bank Asal', receipt.senderBank, cols);
+    if (receipt.senderAccount) encoder.twoColumns('No. Rekening', receipt.senderAccount, cols);
+    encoder.divider('-', cols);
+  }
 
   // Recipient details
   encoder.bold(true).line('TUJUAN TRANSFER:').bold(false);
