@@ -64,7 +64,7 @@ export async function preprocessImage(imageSource: string | File | Blob): Promis
         return;
       }
 
-      // Max dimension around 1600px for balanced speed and OCR crispness
+      // Max dimension around 1800px for balanced speed and OCR crispness
       let width = img.width;
       let height = img.height;
       const maxDim = 1800;
@@ -107,7 +107,7 @@ export async function preprocessImage(imageSource: string | File | Blob): Promis
         ctx.putImageData(imgData, 0, 0);
         resolve(canvas.toDataURL('image/jpeg', 0.92));
       } catch (e) {
-        // Fallback to data URL if security/canvas tainted
+        // Fallback to data URL if canvas tainted
         resolve(canvas.toDataURL('image/jpeg', 0.92));
       }
     };
@@ -157,12 +157,12 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
     .filter((l) => l.length > 0);
 
   const cleanText = ocrText.replace(/\r/g, ' ');
+  const upper = cleanText.toUpperCase();
 
   // 1. Detect Source App
   let sourceApp = 'Transfer Bank';
-  const upper = cleanText.toUpperCase();
-  if (upper.includes('BCA') || upper.includes('M-BCA') || upper.includes('MYBCA')) sourceApp = 'BCA Mobile';
-  else if (upper.includes('BRIMO') || upper.includes('BRI ')) sourceApp = 'BRImo';
+  if (upper.includes('BRIMO') || upper.includes('BANK BRI') || upper.includes('BANK RAKYAT INDONESIA')) sourceApp = 'BRImo';
+  else if (upper.includes('BCA') || upper.includes('M-BCA') || upper.includes('MYBCA')) sourceApp = 'BCA Mobile';
   else if (upper.includes('LIVIN') || upper.includes('MANDIRI')) sourceApp = "Livin' by Mandiri";
   else if (upper.includes('BNI') || upper.includes('WONDROUS')) sourceApp = 'BNI Mobile';
   else if (upper.includes('DANA')) sourceApp = 'DANA';
@@ -173,109 +173,11 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
   else if (upper.includes('JAGO')) sourceApp = 'Bank Jago';
   else if (upper.includes('BSI')) sourceApp = 'BSI Mobile';
 
-  // 2. Extract Bank Name
-  let bankName = '';
-  for (const b of KNOWN_BANKS) {
-    const regex = new RegExp(`\\b${b}\\b`, 'i');
-    if (regex.test(cleanText)) {
-      bankName = b;
-      break;
-    }
-  }
-  if (!bankName) {
-    if (upper.includes('BANK CENTRAL ASIA')) bankName = 'BCA';
-    else if (upper.includes('BANK RAKYAT INDONESIA')) bankName = 'BRI';
-    else if (upper.includes('BANK NEGARA INDONESIA')) bankName = 'BNI';
-    else if (upper.includes('BANK SYARIAH INDONESIA')) bankName = 'BSI';
-    else bankName = 'BCA'; // sensible fallback
-  }
-
-  // 3. Extract Nominal (Amount)
-  // Common patterns:
-  // "Rp 150.000", "Rp. 150.000,00", "Rp150.000", "150.000,00", "Jumlah 150.000", "Nominal 250.000"
-  let amount = 0;
-  const amountPatterns = [
-    /(?:JUMLAH|NOMINAL|SEBESAR|TOTAL TRANSFER|NILAI|TOTAL PEMBAYARAN|NOMINAL TRANSFER|TRANSFER SEBESAR|TRANSFER)\D{0,15}(?:RP\.?|IDR)?\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)/i,
-    /(?:RP\.?|IDR)\s*([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{2})?)/i,
-    /([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{2})?)\s*(?:RUPIAH|IDR)/i,
-    /\b([1-9][0-9]{0,2}(?:\.[0-9]{3})+)\b/,
-  ];
-
-  for (const pat of amountPatterns) {
-    const match = cleanText.match(pat);
-    if (match && match[1]) {
-      // Remove dots and commas (e.g. 150.000,00 -> 150000)
-      let rawNumStr = match[1];
-      if (rawNumStr.includes(',') && rawNumStr.indexOf(',') === rawNumStr.length - 3) {
-        // e.g. "150.000,00"
-        rawNumStr = rawNumStr.substring(0, rawNumStr.indexOf(','));
-      }
-      const parsed = parseInt(rawNumStr.replace(/[^0-9]/g, ''), 10);
-      if (parsed >= 1000 && parsed <= 500000000) {
-        amount = parsed;
-        break;
-      }
-    }
-  }
-
-  // 4. Extract Recipient Name (Nama Penerima)
-  let recipientName = '';
-  const recipientKeywords = [
-    /(?:PENERIMA|NAMA PENERIMA|KEPADA|TUJUAN|TRANSFER KE|KE REKENING|AKUN TUJUAN|NAME|BENEFICIARY)\s*[:=\-]?\s*([A-Z\s.,'/]+)/i,
-    /(?:ATAS NAMA|A\.?N\.?)\s*[:=\-]?\s*([A-Z\s.,'/]+)/i,
-  ];
-
-  for (const pat of recipientKeywords) {
-    const match = cleanText.match(pat);
-    if (match && match[1]) {
-      const candidate = match[1].split('\n')[0].trim();
-      // Filter out invalid keywords like "BERHASIL", "RP", etc.
-      if (candidate.length > 2 && !/^(RP|BERHASIL|SUKSES|SELESAI|BANK|TRANSFER|TANGGAL)/i.test(candidate)) {
-        recipientName = candidate.replace(/[^A-Za-z\s.,]/g, '').trim().toUpperCase();
-        break;
-      }
-    }
-  }
-
-  // If not found by keyword, scan lines near bank name or account number
-  if (!recipientName) {
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].toUpperCase();
-      if (line.includes('PENERIMA') || line.includes('TUJUAN') || line.includes('TRANSFER KE')) {
-        // check next line
-        if (i + 1 < lines.length) {
-          const nextLine = lines[i + 1].trim().toUpperCase();
-          if (nextLine.length >= 3 && !/[0-9]/.test(nextLine) && !nextLine.includes('BERHASIL')) {
-            recipientName = nextLine;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  if (!recipientName) {
-    recipientName = 'PENERIMA TRANSFER';
-  }
-
-  // 5. Extract Account / Phone Number
-  let accountNumber = '';
-  // Match digits sequence of 8 to 18 digits or digits with dashes/spaces
-  const accMatch = cleanText.match(/\b([0-9]{4}[-\s]?[0-9]{4}[-\s]?[0-9]{2,8}|[0-9]{8,18})\b/);
-  if (accMatch && accMatch[1]) {
-    accountNumber = accMatch[1].replace(/[-\s]/g, '');
-  } else {
-    // Check if e-wallet phone number format (08xx or 628xx)
-    const phoneMatch = cleanText.match(/\b(08[0-9]{8,12}|628[0-9]{8,12})\b/);
-    if (phoneMatch && phoneMatch[1]) {
-      accountNumber = phoneMatch[1];
-    }
-  }
-
-  // 6. Extract Reference Number (No. Ref)
+  // 2. Extract Reference Number (No. Ref) first
+  // Having this first prevents ref digits from being mistakenly extracted as account number!
   let refNumber = '';
   const refPatterns = [
-    /(?:NO\.?\s*REF(?:ERENSI)?|ID TRANSAKSI|TRANSACTION ID|NO\.?\s*RESI|KODE REFERENSI|NO JURNAL|REF NO)\s*[:=\-]?\s*([A-Za-z0-9\-_]{6,30})/i,
+    /(?:NO\.?\s*REF(?:ERENSI)?|ID TRANSAKSI|TRANSACTION ID|NO\.?\s*RESI|KODE REFERENSI|NO JURNAL|REF NO)\s*[:=\-|]?\s*([A-Za-z0-9\-_]{6,30})/i,
     /\b([0-9]{12,24})\b/,
   ];
 
@@ -286,27 +188,240 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
       break;
     }
   }
-  // Requirement C.2: jika tidak ada/kosong, hasilkan kode acak unik/random otomatis
-  if (!refNumber) {
-    refNumber = generateRefNumber('KD');
+
+  const cleanRefDigits = refNumber.replace(/[^0-9]/g, '');
+
+  // 3. Locate Destination Section ("TUJUAN" / "TRANSFER KE" / "PENERIMA" / "REKENING TUJUAN")
+  const tujuanIdx = lines.findIndex((l) =>
+    /^TUJUAN\b/i.test(l) ||
+    /^TRANSFER\s+KE\b/i.test(l) ||
+    /^PENERIMA\b/i.test(l) ||
+    /^REKENING\s+TUJUAN\b/i.test(l) ||
+    /^KE\s+REKENING\b/i.test(l) ||
+    /^KE\b/i.test(l)
+  );
+
+  const tujuanLines: string[] = [];
+  if (tujuanIdx !== -1) {
+    for (let i = tujuanIdx + 1; i < Math.min(tujuanIdx + 7, lines.length); i++) {
+      const line = lines[i];
+      // Stop when hitting other section headers
+      if (/^(Jenis\s+Transaksi|Catatan|Nominal|Biaya|Total|INFORMASI|Sumber\s+Dana|Detail\s+Transaksi|Waktu)/i.test(line)) {
+        break;
+      }
+      tujuanLines.push(line);
+    }
   }
 
-  // 7. Extract Date and Time
+  // 4. Extract Destination Account Number (Nomor Rekening Tujuan)
+  let accountNumber = '';
+
+  // Priority A: Search inside the Tujuan lines
+  // Matches grouped numbers like "1160 0101 6845 502" or continuous "116001016845502"
+  if (tujuanLines.length > 0) {
+    for (const line of tujuanLines) {
+      const digitsMatch = line.match(/(?:\b[0-9]{2,6}[\s\-][0-9]{2,6}[\s\-][0-9]{2,6}(?:[\s\-][0-9]{2,6})?\b|\b[0-9]{8,18}\b)/);
+      if (digitsMatch) {
+        const raw = digitsMatch[0].replace(/[^0-9]/g, '');
+        // Must have at least 8 digits and not be the reference number
+        if (raw.length >= 8 && raw !== cleanRefDigits) {
+          accountNumber = digitsMatch[0].replace(/\s+/g, ' ').trim();
+          break;
+        }
+      }
+    }
+  }
+
+  // Priority B: Search for explicit label (e.g. "No. Rekening: 1160 0101 6845 502")
+  if (!accountNumber) {
+    const labelMatch = cleanText.match(/(?:NO\.?\s*REK(?:ENING)?(?:\s*TUJUAN)?|REKENING\s*TUJUAN|NOMOR\s*REKENING|NO\s*AKUN)\s*[:=\-|]?\s*([0-9\s\-]{8,24})/i);
+    if (labelMatch && labelMatch[1]) {
+      const cand = labelMatch[1].trim();
+      const raw = cand.replace(/[^0-9]/g, '');
+      if (raw.length >= 8 && raw !== cleanRefDigits) {
+        accountNumber = cand.replace(/\s+/g, ' ').trim();
+      }
+    }
+  }
+
+  // Priority C: Check lines directly under or next to bank keywords
+  if (!accountNumber) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].toUpperCase();
+      if (line.includes('BANK BRI') || line.includes('BCA') || line.includes('BANK MANDIRI') || line.includes('BNI')) {
+        // Exclude Sumber Dana lines
+        if (i > 0 && /SUMBER/i.test(lines[i - 1])) continue;
+        if (/SUMBER/i.test(line)) continue;
+
+        // Check same line or next line
+        const targetCandidate = lines[i + 1] || '';
+        const m = targetCandidate.match(/(?:\b[0-9]{2,6}[\s\-][0-9]{2,6}[\s\-][0-9]{2,6}(?:[\s\-][0-9]{2,6})?\b|\b[0-9]{8,18}\b)/);
+        if (m) {
+          const raw = m[0].replace(/[^0-9]/g, '');
+          if (raw.length >= 8 && raw !== cleanRefDigits) {
+            accountNumber = m[0].replace(/\s+/g, ' ').trim();
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // Priority D: Find any 8-18 digit sequence not matching refNumber, masked source account, or NPWP
+  if (!accountNumber) {
+    const allMatches = cleanText.matchAll(/(?:\b[0-9]{2,6}[\s\-][0-9]{2,6}[\s\-][0-9]{2,6}(?:[\s\-][0-9]{2,6})?\b|\b[0-9]{8,18}\b)/g);
+    for (const match of allMatches) {
+      const cand = match[0].trim();
+      const raw = cand.replace(/[^0-9]/g, '');
+      // Exclude ref number, NPWP (010016087...), and short numbers
+      if (raw.length >= 8 && raw !== cleanRefDigits && !raw.startsWith('010016087') && !cand.includes('*')) {
+        accountNumber = cand.replace(/\s+/g, ' ').trim();
+        break;
+      }
+    }
+  }
+
+  // Priority E: Check e-wallet phone number format (08xx or 628xx)
+  if (!accountNumber) {
+    const phoneMatch = cleanText.match(/\b(08[0-9]{8,12}|628[0-9]{8,12})\b/);
+    if (phoneMatch && phoneMatch[1]) {
+      accountNumber = phoneMatch[1];
+    }
+  }
+
+  // If still not found, leave as empty string or dash (NEVER inject fake/dummy account numbers!)
+  if (!accountNumber) {
+    accountNumber = '-';
+  }
+
+  // 5. Extract Recipient Name (Nama Penerima)
+  let recipientName = '';
+
+  // Priority A: From Tujuan block lines
+  if (tujuanLines.length > 0) {
+    for (const line of tujuanLines) {
+      // Remove avatar abbreviations like "AP " or "(AP) " from BRImo UI
+      const cleanLine = line.replace(/^\(?[A-Z]{2,3}\)?\s+/, '').trim();
+      // Skip if contains 4+ consecutive digits (that's an account number), or is a known header
+      if (
+        !cleanLine.match(/[0-9]{4}/) &&
+        !/^(BANK|TRANSFER|JENIS|CATATAN|TOTAL|NOMINAL|SUMBER|TUJUAN)/i.test(cleanLine) &&
+        cleanLine.length > 2
+      ) {
+        recipientName = cleanLine.toUpperCase();
+        break;
+      }
+    }
+  }
+
+  // Priority B: From explicit keyword matching
+  if (!recipientName) {
+    const recipientKeywords = [
+      /(?:PENERIMA|NAMA PENERIMA|KEPADA|TUJUAN|TRANSFER KE|KE REKENING|AKUN TUJUAN|NAME|BENEFICIARY)\s*[:=\-|]?\s*([A-Z\s.,'/]+)/i,
+      /(?:ATAS NAMA|A\.?N\.?)\s*[:=\-|]?\s*([A-Z\s.,'/]+)/i,
+    ];
+    for (const pat of recipientKeywords) {
+      const match = cleanText.match(pat);
+      if (match && match[1]) {
+        const candidate = match[1].split('\n')[0].trim();
+        if (candidate.length > 2 && !/^(RP|BERHASIL|SUKSES|SELESAI|BANK|TRANSFER|TANGGAL)/i.test(candidate)) {
+          recipientName = candidate.replace(/[^A-Za-z\s.,]/g, '').trim().toUpperCase();
+          break;
+        }
+      }
+    }
+  }
+
+  if (!recipientName) {
+    recipientName = 'PENERIMA TRANSFER';
+  }
+
+  // 6. Extract Destination Bank Name
+  let bankName = '';
+  // Check tujuanLines first
+  for (const line of tujuanLines) {
+    for (const b of KNOWN_BANKS) {
+      if (new RegExp(`\\b${b}\\b`, 'i').test(line)) {
+        bankName = b;
+        break;
+      }
+    }
+    if (bankName) break;
+  }
+
+  // Check 'Jenis Transaksi' line (e.g. "Jenis Transaksi Transfer Bank BRI")
+  if (!bankName) {
+    const jtMatch = cleanText.match(/Jenis\s+Transaksi\s+Transfer\s+Bank\s+([A-Za-z]+)/i);
+    if (jtMatch && jtMatch[1]) {
+      bankName = jtMatch[1].toUpperCase();
+    }
+  }
+
+  // Fallback to checking overall text
+  if (!bankName) {
+    for (const b of KNOWN_BANKS) {
+      const regex = new RegExp(`\\b${b}\\b`, 'i');
+      if (regex.test(cleanText)) {
+        bankName = b;
+        break;
+      }
+    }
+  }
+
+  if (!bankName) {
+    if (upper.includes('BANK CENTRAL ASIA')) bankName = 'BCA';
+    else if (upper.includes('BANK RAKYAT INDONESIA') || upper.includes('BRI')) bankName = 'BRI';
+    else if (upper.includes('BANK MANDIRI') || upper.includes('MANDIRI')) bankName = 'MANDIRI';
+    else if (upper.includes('BANK NEGARA INDONESIA') || upper.includes('BNI')) bankName = 'BNI';
+    else if (upper.includes('BANK SYARIAH INDONESIA') || upper.includes('BSI')) bankName = 'BSI';
+    else bankName = 'BRI';
+  }
+
+  // 7. Extract Nominal (Amount)
+  let amount = 0;
+  const amountPatterns = [
+    /(?:NOMINAL|JUMLAH|SEBESAR|TOTAL TRANSAKSI|TOTAL TRANSFER|NILAI|TOTAL PEMBAYARAN|NOMINAL TRANSFER|TRANSFER)\D{0,15}(?:RP\.?|IDR)?\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)/i,
+    /(?:RP\.?|IDR)\s*([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{2})?)/i,
+    /([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{2})?)\s*(?:RUPIAH|IDR)/i,
+    /\b([1-9][0-9]{0,2}(?:\.[0-9]{3})+)\b/,
+  ];
+
+  for (const pat of amountPatterns) {
+    const match = cleanText.match(pat);
+    if (match && match[1]) {
+      let rawNumStr = match[1];
+      if (rawNumStr.includes(',') && rawNumStr.indexOf(',') === rawNumStr.length - 3) {
+        rawNumStr = rawNumStr.substring(0, rawNumStr.indexOf(','));
+      }
+      const parsed = parseInt(rawNumStr.replace(/[^0-9]/g, ''), 10);
+      if (parsed >= 1000 && parsed <= 500000000) {
+        amount = parsed;
+        break;
+      }
+    }
+  }
+
+  // 8. If refNumber was not found above, generate a unique KD code
+  if (!refNumber) {
+    refNumber = generateRefNumber(bankName ? bankName.substring(0, 3).toUpperCase() : 'KD');
+  }
+
+  // 9. Extract Date and Time
   let date = getCurrentDateStr();
   let time = getCurrentTimeStr();
 
-  // Date match: DD/MM/YYYY or DD-MM-YYYY or DD Mon YYYY
-  const dateMatch = cleanText.match(/\b([0-3]?[0-9][\/\-.][0-1]?[0-9][\/\-.](?:20)?[2-3][0-9])\b/);
-  if (dateMatch && dateMatch[1]) {
-    date = dateMatch[1].replace(/[-.]/g, '/');
+  // Match Indonesian date like "15 Oktober 2026" or "1 Nov 2026"
+  const indoDateMatch = cleanText.match(/\b([0-3]?[0-9])\s*(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Ags|Agu|Sep|Okt|Nov|Des)[a-z]*\s*(20[2-3][0-9])\b/i);
+  if (indoDateMatch) {
+    const monthNames = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'ag', 'sep', 'okt', 'nov', 'des'];
+    const mIdx = monthNames.findIndex((m) => indoDateMatch[2].toLowerCase().startsWith(m));
+    const mStr = String(mIdx !== -1 ? mIdx + 1 : 1).padStart(2, '0');
+    date = `${String(indoDateMatch[1]).padStart(2, '0')}/${mStr}/${indoDateMatch[3]}`;
   } else {
-    // Match Indonesian date like "01 Nov 2026" or "1 November 2026"
-    const indoDateMatch = cleanText.match(/\b([0-3]?[0-9])\s*(Jan|Feb|Mar|Apr|Mei|Jun|Jul|Ags|Agu|Sep|Okt|Nov|Des)[a-z]*\s*(20[2-3][0-9])\b/i);
-    if (indoDateMatch) {
-      const monthNames = ['jan', 'feb', 'mar', 'apr', 'mei', 'jun', 'jul', 'ag', 'sep', 'okt', 'nov', 'des'];
-      const mIdx = monthNames.findIndex((m) => indoDateMatch[2].toLowerCase().startsWith(m));
-      const mStr = String(mIdx !== -1 ? mIdx + 1 : 1).padStart(2, '0');
-      date = `${String(indoDateMatch[1]).padStart(2, '0')}/${mStr}/${indoDateMatch[3]}`;
+    // Date match: DD/MM/YYYY or DD-MM-YYYY
+    const dateMatch = cleanText.match(/\b([0-3]?[0-9][\/\-.][0-1]?[0-9][\/\-.](?:20)?[2-3][0-9])\b/);
+    if (dateMatch && dateMatch[1]) {
+      date = dateMatch[1].replace(/[-.]/g, '/');
     }
   }
 
@@ -317,14 +432,17 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
     if (time.length === 5) time += ':00';
   }
 
-  // 8. Notes / Keterangan
+  // 10. Notes / Keterangan
   let notes = 'Transfer Berhasil';
-  const notesMatch = cleanText.match(/(?:CATATAN|BERITA|KETERANGAN|PESAN)\s*[:=\-]?\s*([^\n\r]+)/i);
+  const notesMatch = cleanText.match(/(?:CATATAN|BERITA|KETERANGAN|PESAN)\s*[:=\-|]?\s*([^\n\r]+)/i);
   if (notesMatch && notesMatch[1]) {
-    notes = notesMatch[1].trim();
+    const candidateNotes = notesMatch[1].trim();
+    if (candidateNotes !== '-' && candidateNotes.length > 1) {
+      notes = candidateNotes;
+    }
   }
 
-  // 9. Admin Fee & Total
+  // 11. Admin Fee & Total
   const adminFee = settings.defaultAdminFee || 5000;
   const totalAmount = amount + adminFee;
 
@@ -335,7 +453,7 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
     refNumber,
     recipientName,
     bankName,
-    accountNumber: accountNumber || '8839210948',
+    accountNumber,
     amount: amount || 100000,
     adminFee,
     totalAmount,

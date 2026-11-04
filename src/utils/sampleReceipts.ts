@@ -68,29 +68,37 @@ Metode Pembayaran: Saldo DANA`,
   },
   {
     id: 'sample-brimo',
-    title: 'BRImo (Transfer Sesama BRI)',
+    title: 'BRImo (Transfer Bank BRI)',
     bank: 'BRI',
     badgeColor: 'bg-blue-700',
-    mockOcrText: `BRImo
-Transaksi Berhasil
-01/11/2026 16:42:10 WIB
-Nomor Referensi: BR202611018899
-Tujuan: BANK BRI
-Nomor Rekening: 102938475610
-Nama Penerima: RIAN HIDAYAT
-Nominal: Rp 750.000
-Biaya Admin: Rp 0
-Total: Rp 750.000
-Catatan: Pembelian material`,
+    mockOcrText: `Transaksi Berhasil
+15 Oktober 2026, 19:46:07 WIB
+Total Transaksi |
+Rp250.000 |
+No. Ref 232547592186 |
+Sumber Dana |
+M. CHASIN ZAUHARI |
+(vz) BANK BRI
+6305 *+++ *xwx 530
+Tujuan
+ALDIANTO DONNY PRANA
+AP BANK BRI
+1160 0101 6845 502
+Jenis Transaksi Transfer Bank BRI
+Catatan -
+Nominal Rp250.000
+Biaya Admin Rpo`,
     defaultData: {
       bankName: 'BRI',
-      recipientName: 'RIAN HIDAYAT',
-      accountNumber: '102938475610',
-      amount: 750000,
+      recipientName: 'ALDIANTO DONNY PRANA',
+      accountNumber: '1160 0101 6845 502',
+      amount: 250000,
       adminFee: 5000,
-      totalAmount: 755000,
-      refNumber: generateRefNumber('BRI'),
-      notes: 'Pembelian material',
+      totalAmount: 255000,
+      refNumber: '232547592186',
+      date: '15/10/2026',
+      time: '19:46:07',
+      notes: 'Transfer Berhasil',
       sourceApp: 'BRImo',
       status: 'BERHASIL',
     },
