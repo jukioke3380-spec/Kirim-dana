@@ -57,14 +57,16 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
             </p>
           </div>
 
-          <p className="text-[11px] text-slate-500 font-sans font-medium">
-            {receipt.agentLocation || 'Bekasi, Jawa Barat'}
-          </p>
-          {receipt.agentContact && (
+          {receipt.agentLocation ? (
+            <p className="text-[11px] text-slate-500 font-sans font-medium">
+              {receipt.agentLocation}
+            </p>
+          ) : null}
+          {receipt.agentContact ? (
             <p className="text-[10px] text-slate-400 font-sans">
               WA / CS: {receipt.agentContact}
             </p>
-          )}
+          ) : null}
         </div>
 
         {/* 2. Status Badge */}

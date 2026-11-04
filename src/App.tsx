@@ -19,9 +19,21 @@ export default function App() {
       const saved = localStorage.getItem('kirim-dana-settings');
       if (saved) {
         const parsed = JSON.parse(saved);
+        let changed = false;
         // Automatically migrate old default to new default
         if (parsed.defaultAgentName === 'Agen Batara Bekasi' || !parsed.defaultAgentName) {
           parsed.defaultAgentName = 'loket ppob Athar digital payment';
+          changed = true;
+        }
+        if (parsed.defaultAgentLocation === 'Bekasi, Jawa Barat') {
+          parsed.defaultAgentLocation = '';
+          changed = true;
+        }
+        if (parsed.defaultAgentContact === '0812-3456-7890') {
+          parsed.defaultAgentContact = '';
+          changed = true;
+        }
+        if (changed) {
           localStorage.setItem('kirim-dana-settings', JSON.stringify({ ...DEFAULT_SETTINGS, ...parsed }));
         }
         return { ...DEFAULT_SETTINGS, ...parsed };
@@ -59,8 +71,8 @@ export default function App() {
       agentName: 'loket ppob Athar digital payment',
       agentTagline: 'gerai transaksi online & multi pembayaran',
       agentServices: 'layanan transfer uang tarik tunai & pembayaran tagihan',
-      agentLocation: 'Bekasi, Jawa Barat',
-      agentContact: '0812-3456-7890',
+      agentLocation: '',
+      agentContact: '',
       status: 'BERHASIL',
       sourceApp: 'BCA Mobile',
       createdAt: Date.now(),

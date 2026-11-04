@@ -118,8 +118,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         defaultAgentName: 'loket ppob Athar digital payment',
         defaultAgentTagline: 'gerai transaksi online & multi pembayaran',
         defaultAgentServices: 'layanan transfer uang tarik tunai & pembayaran tagihan',
-        defaultAgentLocation: 'Bekasi, Jawa Barat',
-        defaultAgentContact: '0812-3456-7890',
+        defaultAgentLocation: '',
+        defaultAgentContact: '',
         defaultAdminFee: 5000,
         paperSize: '58mm',
         customFooterNote: 'Terima kasih telah bertransaksi di Agen kami.\nStruk ini adalah bukti pembayaran yang sah.',
@@ -348,14 +348,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* Alamat Agen */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Lokasi / Alamat Agen
+            Lokasi / Alamat Agen (Opsional)
           </label>
           <div className="relative">
             <input
               type="text"
               value={formData.defaultAgentLocation}
               onChange={(e) => handleFieldChange('defaultAgentLocation', e.target.value)}
-              placeholder="Bekasi, Jawa Barat"
+              placeholder="Opsional (Kosongkan jika tidak ditampilkan)"
               className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 text-xs font-medium text-slate-800 outline-hidden"
             />
             <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -365,14 +365,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {/* No. Kontak Agen */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">
-            No. WhatsApp / CS Agen
+            No. WhatsApp / CS Agen (Opsional)
           </label>
           <div className="relative">
             <input
               type="text"
               value={formData.defaultAgentContact}
               onChange={(e) => handleFieldChange('defaultAgentContact', e.target.value)}
-              placeholder="0812-3456-7890"
+              placeholder="Opsional (Kosongkan jika tidak ditampilkan)"
               className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 text-xs font-medium text-slate-800 outline-hidden"
             />
             <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
