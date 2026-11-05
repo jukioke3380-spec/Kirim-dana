@@ -587,7 +587,7 @@ export function parseReceiptText(ocrText: string, settings: AppSettings): Partia
     adminFee,
     totalAmount,
     notes,
-    agentName: settings.defaultAgentName || 'loket ppob Athar digital payment',
+    agentName: settings.defaultAgentName || 'Athar digital payment',
     agentTagline: settings.defaultAgentTagline || 'gerai transaksi online & multi pembayaran',
     agentServices: settings.defaultAgentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan',
     agentLocation: settings.defaultAgentLocation || '',

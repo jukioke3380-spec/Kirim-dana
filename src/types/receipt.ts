@@ -16,7 +16,7 @@ export interface ReceiptData {
   adminFee: number; // e.g. 5000
   totalAmount: number; // amount + adminFee
   notes: string; // e.g. "Transfer Berhasil"
-  agentName: string; // e.g. "loket ppob Athar digital payment"
+  agentName: string; // e.g. "Athar digital payment"
   agentTagline?: string; // e.g. "gerai transaksi online & multi pembayaran"
   agentServices?: string; // e.g. "layanan transfer uang tarik tunai & pembayaran tagihan"
   agentLocation: string; // e.g. "Bekasi, Jawa Barat"
@@ -43,7 +43,7 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  defaultAgentName: 'loket ppob Athar digital payment',
+  defaultAgentName: 'Athar digital payment',
   defaultAgentTagline: 'gerai transaksi online & multi pembayaran',
   defaultAgentServices: 'layanan transfer uang tarik tunai & pembayaran tagihan',
   defaultAgentLocation: '',

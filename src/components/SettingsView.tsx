@@ -115,7 +115,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const handleResetDefaults = () => {
     if (confirm('Kembalikan semua pengaturan ke nilai bawaan pabrik?')) {
       const defaults: AppSettings = {
-        defaultAgentName: 'loket ppob Athar digital payment',
+        defaultAgentName: 'Athar digital payment',
         defaultAgentTagline: 'gerai transaksi online & multi pembayaran',
         defaultAgentServices: 'layanan transfer uang tarik tunai & pembayaran tagihan',
         defaultAgentLocation: '',
@@ -303,7 +303,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           </div>
         </div>
 
-        {/* Nama Agen (Default: loket ppob Athar digital payment) */}
+        {/* Nama Agen (Default: Athar digital payment) */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">
             Nama Agen (Default)
@@ -312,7 +312,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="text"
             value={formData.defaultAgentName}
             onChange={(e) => handleFieldChange('defaultAgentName', e.target.value)}
-            placeholder="loket ppob Athar digital payment"
+            placeholder="Athar digital payment"
             className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 text-sm font-bold text-slate-900 outline-hidden"
           />
         </div>

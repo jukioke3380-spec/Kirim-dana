@@ -117,11 +117,11 @@ export function buildReceiptEscPos(receipt: ReceiptData, settings: AppSettings):
 
   // Header
   encoder.align('center');
-  encoder.bold(true).size('double').line(receipt.agentName || 'LOKET PPOB ATHAR DIGITAL PAYMENT').size('normal');
+  encoder.bold(true).size('double').line(receipt.agentName ? receipt.agentName.toUpperCase() : 'ATHAR DIGITAL PAYMENT').size('normal');
   const tagline = receipt.agentTagline || settings.defaultAgentTagline || 'gerai transaksi online & multi pembayaran';
   const services = receipt.agentServices || settings.defaultAgentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan';
   encoder.bold(true).line(tagline.toUpperCase());
-  encoder.bold(false).line(services);
+  encoder.bold(true).line(services);
   if (receipt.agentLocation) {
     encoder.line(receipt.agentLocation);
   }
@@ -133,34 +133,39 @@ export function buildReceiptEscPos(receipt: ReceiptData, settings: AppSettings):
 
   // Title
   encoder.bold(true).line('BUKTI TRANSFER DANA').bold(false);
-  encoder.line(`STATUS: ${receipt.status || 'BERHASIL'}`);
+  encoder.bold(true).line(`STATUS: ${receipt.status || 'BERHASIL'}`).bold(false);
   encoder.divider('-', cols);
 
   // Transaction Details
   encoder.align('left');
+  encoder.bold(true);
   encoder.twoColumns('Tanggal', receipt.date, cols);
   encoder.twoColumns('Waktu', receipt.time + ' WIB', cols);
   encoder.twoColumns('No. Ref', receipt.refNumber, cols);
   encoder.twoColumns('Metode', receipt.sourceApp || 'Transfer Bank', cols);
+  encoder.bold(false);
   encoder.divider('-', cols);
 
   // Source of Funds details (Sumber Dana)
   if (receipt.senderName || receipt.senderAccount || receipt.senderBank) {
-    encoder.bold(true).line('SUMBER DANA (PENGIRIM):').bold(false);
+    encoder.bold(true).line('SUMBER DANA (PENGIRIM):');
     if (receipt.senderName) encoder.twoColumns('Pengirim', receipt.senderName, cols);
     if (receipt.senderBank) encoder.twoColumns('Bank Asal', receipt.senderBank, cols);
     if (receipt.senderAccount) encoder.twoColumns('No. Rekening', receipt.senderAccount, cols);
+    encoder.bold(false);
     encoder.divider('-', cols);
   }
 
   // Recipient details
-  encoder.bold(true).line('TUJUAN TRANSFER:').bold(false);
+  encoder.bold(true).line('TUJUAN TRANSFER:');
   encoder.twoColumns('Bank/E-Wallet', receipt.bankName, cols);
   encoder.twoColumns('No. Rekening', receipt.accountNumber, cols);
   encoder.twoColumns('Nama Penerima', receipt.recipientName, cols);
+  encoder.bold(false);
   encoder.divider('-', cols);
 
   // Financial Breakdown
+  encoder.bold(true);
   encoder.twoColumns('Jumlah Transfer', formatRupiah(receipt.amount), cols);
   encoder.twoColumns('Biaya Admin', formatRupiah(receipt.adminFee), cols);
   encoder.divider('=', cols);
@@ -172,7 +177,7 @@ export function buildReceiptEscPos(receipt: ReceiptData, settings: AppSettings):
   encoder.divider('-', cols);
 
   if (receipt.notes && receipt.notes !== 'Transfer Berhasil') {
-    encoder.align('left').line(`Catatan: ${receipt.notes}`);
+    encoder.align('left').bold(true).line(`Catatan: ${receipt.notes}`).bold(false);
     encoder.divider('-', cols);
   }
 
@@ -200,7 +205,7 @@ export function buildTestPrintEscPos(settings: AppSettings): Uint8Array {
   const encoder = new EscPosEncoder();
   encoder.align('center');
   encoder.bold(true).size('double').line('TEST PRINTER').size('normal');
-  encoder.line(settings.defaultAgentName || 'LOKET PPOB ATHAR DIGITAL PAYMENT');
+  encoder.bold(true).line(settings.defaultAgentName ? settings.defaultAgentName.toUpperCase() : 'ATHAR DIGITAL PAYMENT');
   encoder.line(settings.defaultAgentTagline || 'gerai transaksi online & multi pembayaran');
   encoder.line(settings.defaultAgentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan');
   encoder.divider('=', cols);

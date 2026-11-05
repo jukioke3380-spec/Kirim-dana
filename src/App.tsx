@@ -21,8 +21,12 @@ export default function App() {
         const parsed = JSON.parse(saved);
         let changed = false;
         // Automatically migrate old default to new default
-        if (parsed.defaultAgentName === 'Agen Batara Bekasi' || !parsed.defaultAgentName) {
-          parsed.defaultAgentName = 'loket ppob Athar digital payment';
+        if (
+          parsed.defaultAgentName === 'Agen Batara Bekasi' ||
+          parsed.defaultAgentName === 'loket ppob Athar digital payment' ||
+          !parsed.defaultAgentName
+        ) {
+          parsed.defaultAgentName = 'Athar digital payment';
           changed = true;
         }
         if (parsed.defaultAgentLocation === 'Bekasi, Jawa Barat') {
@@ -71,7 +75,7 @@ export default function App() {
       adminFee: 5000,
       totalAmount: 255000,
       notes: 'Transfer Berhasil',
-      agentName: 'loket ppob Athar digital payment',
+      agentName: 'Athar digital payment',
       agentTagline: 'gerai transaksi online & multi pembayaran',
       agentServices: 'layanan transfer uang tarik tunai & pembayaran tagihan',
       agentLocation: '',

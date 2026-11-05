@@ -151,7 +151,7 @@ export function buildWhatsAppCaption(receipt: ReceiptData): string {
   const services = receipt.agentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan';
 
   let caption = `*BUKTI TRANSFER DANA*
-*${receipt.agentName || 'loket ppob Athar digital payment'}*
+*${receipt.agentName || 'Athar digital payment'}*
 _${tagline}_
 _${services}_
 --------------------------------
@@ -186,7 +186,7 @@ Biaya Admin: ${formatRupiah(receipt.adminFee)}
     caption += `Catatan: ${receipt.notes}\n--------------------------------\n`;
   }
 
-  caption += `_Terima kasih telah bertransaksi di ${receipt.agentName || 'loket ppob Athar digital payment'}._`;
+  caption += `_Terima kasih telah bertransaksi di ${receipt.agentName || 'Athar digital payment'}._`;
 
   return caption;
 }

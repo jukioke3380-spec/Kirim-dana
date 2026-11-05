@@ -38,54 +38,54 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
         {/* 1. Header Agen Info */}
         <div
           onClick={() => handleTap('agentName')}
-          className={`text-center pt-2 pb-3 border-b-2 border-dashed border-slate-200 ${tapClass}`}
+          className={`text-center pt-2 pb-3 border-b-2 border-dashed border-slate-300 ${tapClass}`}
         >
           <div className="flex items-center justify-center gap-1.5 mb-1">
-            <h2 className="text-base sm:text-lg font-black tracking-tight text-slate-900 uppercase">
-              {receipt.agentName || 'loket ppob Athar digital payment'}
+            <h2 className="text-lg sm:text-xl font-black tracking-tight text-slate-950 uppercase">
+              {receipt.agentName || 'Athar digital payment'}
             </h2>
-            {!isPrintMode && <Edit3 className="w-3.5 h-3.5 text-sky-400 opacity-60 group-hover:opacity-100" />}
+            {!isPrintMode && <Edit3 className="w-3.5 h-3.5 text-sky-500 opacity-70 group-hover:opacity-100" />}
           </div>
 
           {/* Subheading / Tagline & Services requested by user */}
           <div className="space-y-0.5 mb-1.5">
-            <p className="text-[11px] sm:text-xs font-extrabold text-sky-800 uppercase tracking-wide">
+            <p className="text-xs sm:text-[13px] font-black text-sky-900 uppercase tracking-wide">
               {receipt.agentTagline || settings.defaultAgentTagline || 'gerai transaksi online & multi pembayaran'}
             </p>
-            <p className="text-[10px] sm:text-[11px] text-slate-600 font-sans font-medium capitalize">
+            <p className="text-[11px] sm:text-xs text-slate-800 font-sans font-bold capitalize">
               {receipt.agentServices || settings.defaultAgentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan'}
             </p>
           </div>
 
           {receipt.agentLocation ? (
-            <p className="text-[11px] text-slate-500 font-sans font-medium">
+            <p className="text-xs text-slate-700 font-sans font-bold">
               {receipt.agentLocation}
             </p>
           ) : null}
           {receipt.agentContact ? (
-            <p className="text-[10px] text-slate-400 font-sans">
+            <p className="text-[11px] text-slate-700 font-sans font-bold">
               WA / CS: {receipt.agentContact}
             </p>
           ) : null}
         </div>
 
         {/* 2. Status Badge */}
-        <div className="my-3 py-2 px-3 bg-emerald-50 border border-emerald-200/80 rounded-xl flex items-center justify-center gap-2 text-emerald-800">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span className="text-xs font-bold tracking-wide uppercase font-sans">
+        <div className="my-3 py-2 px-3 bg-emerald-50 border-2 border-emerald-500 rounded-xl flex items-center justify-center gap-2 text-emerald-900">
+          <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+          <span className="text-xs font-black tracking-wide uppercase font-sans">
             TRANSAKSI BERHASIL
           </span>
         </div>
 
         {/* 3. Transaction Meta (Tanggal, Waktu, No Ref) */}
-        <div className="space-y-1.5 text-xs pb-3 border-b border-dashed border-slate-200">
+        <div className="space-y-2 text-xs pb-3 border-b-2 border-dashed border-slate-300">
           {/* Tanggal & Jam */}
           <div
             onClick={() => handleTap('date')}
-            className={`flex justify-between items-center text-slate-600 ${tapClass}`}
+            className={`flex justify-between items-center ${tapClass}`}
           >
-            <span>Waktu Transaksi</span>
-            <span className="font-semibold text-slate-800">
+            <span className="font-bold text-slate-700">Waktu Transaksi</span>
+            <span className="font-black text-slate-950">
               {receipt.date} {receipt.time} WIB
             </span>
           </div>
@@ -93,18 +93,18 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
           {/* Nomor Referensi */}
           <div
             onClick={() => handleTap('refNumber')}
-            className={`flex justify-between items-center text-slate-600 ${tapClass}`}
+            className={`flex justify-between items-center ${tapClass}`}
           >
-            <span>No. Referensi</span>
-            <span className="font-bold text-slate-900 font-receipt tracking-wider">
+            <span className="font-bold text-slate-700">No. Referensi</span>
+            <span className="font-black text-slate-950 font-receipt tracking-wider text-[13px]">
               {receipt.refNumber}
             </span>
           </div>
 
           {/* Sumber Aplikasi (BCA / Mandiri / dll) */}
-          <div className="flex justify-between items-center text-slate-500 text-[11px]">
-            <span>Metode / Saluran</span>
-            <span className="font-medium text-slate-700 font-sans bg-slate-100 px-1.5 py-0.5 rounded">
+          <div className="flex justify-between items-center text-xs">
+            <span className="font-bold text-slate-700">Metode / Saluran</span>
+            <span className="font-black text-slate-900 font-sans bg-slate-200 px-2 py-0.5 rounded text-[11px]">
               {receipt.sourceApp || 'Transfer Bank'}
             </span>
           </div>
@@ -112,13 +112,13 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
 
         {/* 3b. Sumber Dana (Pengirim) */}
         {(receipt.senderName || receipt.senderAccount || receipt.senderBank) ? (
-          <div className="py-3 border-b border-dashed border-slate-200 space-y-2">
+          <div className="py-3 border-b-2 border-dashed border-slate-300 space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">
+              <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider font-sans">
                 Sumber Dana (Pengirim)
               </span>
               {receipt.senderBank && (
-                <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-sans">
+                <span className="text-[10px] font-black text-slate-900 bg-slate-200 px-2 py-0.5 rounded font-sans">
                   {receipt.senderBank}
                 </span>
               )}
@@ -130,8 +130,8 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
                 onClick={() => handleTap('senderName')}
                 className={`flex justify-between items-start text-xs ${tapClass}`}
               >
-                <span className="text-slate-600 shrink-0">Nama Pengirim</span>
-                <span className="font-bold text-slate-900 text-right uppercase max-w-[170px] break-words">
+                <span className="font-bold text-slate-700 shrink-0">Nama Pengirim</span>
+                <span className="font-black text-slate-950 text-right uppercase max-w-[170px] break-words">
                   {receipt.senderName}
                 </span>
               </div>
@@ -143,8 +143,8 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
                 onClick={() => handleTap('senderAccount')}
                 className={`flex justify-between items-center text-xs ${tapClass}`}
               >
-                <span className="text-slate-600">No. Rekening Asal</span>
-                <span className="font-semibold text-slate-800 tracking-wider">
+                <span className="font-bold text-slate-700">No. Rekening Asal</span>
+                <span className="font-black text-slate-950 tracking-wider text-[12px]">
                   {receipt.senderAccount}
                 </span>
               </div>
@@ -153,16 +153,16 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
         ) : !isPrintMode ? (
           <div
             onClick={() => handleTap('senderName')}
-            className="py-2 border-b border-dashed border-slate-200 flex justify-between items-center text-xs text-sky-600 hover:text-sky-700 cursor-pointer"
+            className="py-2.5 border-b-2 border-dashed border-slate-300 flex justify-between items-center text-xs text-sky-700 hover:text-sky-800 cursor-pointer"
           >
-            <span className="text-[11px] font-semibold">+ Tambah Sumber Dana (Pengirim)</span>
-            <Edit3 className="w-3 h-3" />
+            <span className="text-[11px] font-black">+ Tambah Sumber Dana (Pengirim)</span>
+            <Edit3 className="w-3.5 h-3.5" />
           </div>
         ) : null}
 
         {/* 4. Detail Tujuan Transfer (Wajib ada) */}
-        <div className="py-3 border-b border-dashed border-slate-200 space-y-2">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">
+        <div className="py-3 border-b-2 border-dashed border-slate-300 space-y-2">
+          <div className="text-[11px] font-black text-slate-800 uppercase tracking-wider font-sans">
             Detail Tujuan Transfer
           </div>
 
@@ -171,8 +171,8 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
             onClick={() => handleTap('bankName')}
             className={`flex justify-between items-center text-xs ${tapClass}`}
           >
-            <span className="text-slate-600">Bank / E-Wallet</span>
-            <span className="font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded font-sans text-xs">
+            <span className="font-bold text-slate-700">Bank / E-Wallet</span>
+            <span className="font-black text-sky-900 bg-sky-100 px-2.5 py-0.5 rounded font-sans text-xs">
               {receipt.bankName || 'BANK TUJUAN'}
             </span>
           </div>
@@ -182,8 +182,8 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
             onClick={() => handleTap('accountNumber')}
             className={`flex justify-between items-center text-xs ${tapClass}`}
           >
-            <span className="text-slate-600">No. Rekening / ID</span>
-            <span className="font-semibold text-slate-800 tracking-wider">
+            <span className="font-bold text-slate-700">No. Rekening / ID</span>
+            <span className="font-black text-slate-950 tracking-wider text-[13px]">
               {receipt.accountNumber || '-'}
             </span>
           </div>
@@ -193,16 +193,16 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
             onClick={() => handleTap('recipientName')}
             className={`flex justify-between items-start text-xs ${tapClass}`}
           >
-            <span className="text-slate-600 shrink-0">Nama Penerima</span>
-            <span className="font-bold text-slate-900 text-right uppercase max-w-[170px] break-words">
+            <span className="font-bold text-slate-700 shrink-0">Nama Penerima</span>
+            <span className="font-black text-slate-950 text-right uppercase max-w-[170px] break-words">
               {receipt.recipientName || 'PENERIMA TRANSFER'}
             </span>
           </div>
         </div>
 
         {/* 5. Rincian Biaya (Wajib ada) */}
-        <div className="py-3 border-b-2 border-slate-900 space-y-2">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-sans">
+        <div className="py-3 border-b-2 border-slate-950 space-y-2.5">
+          <div className="text-[11px] font-black text-slate-800 uppercase tracking-wider font-sans">
             Rincian Pembayaran
           </div>
 
@@ -211,8 +211,8 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
             onClick={() => handleTap('amount')}
             className={`flex justify-between items-center text-xs ${tapClass}`}
           >
-            <span className="text-slate-600">Jumlah Transfer</span>
-            <span className="font-semibold text-slate-900">
+            <span className="font-bold text-slate-700">Jumlah Transfer</span>
+            <span className="font-black text-slate-950 text-sm">
               {formatRupiah(receipt.amount)}
             </span>
           </div>
@@ -222,18 +222,18 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
             onClick={() => handleTap('adminFee')}
             className={`flex justify-between items-center text-xs ${tapClass}`}
           >
-            <span className="text-slate-600">Admin Bank</span>
-            <span className="font-medium text-slate-800">
+            <span className="font-bold text-slate-700">Admin Bank</span>
+            <span className="font-black text-slate-900">
               {formatRupiah(receipt.adminFee)}
             </span>
           </div>
 
           {/* Total Pembayaran */}
-          <div className="pt-2 border-t border-slate-200 flex justify-between items-baseline">
-            <span className="text-xs font-bold text-slate-900 uppercase">
+          <div className="pt-2.5 border-t-2 border-slate-950 flex justify-between items-baseline">
+            <span className="text-xs font-black text-slate-950 uppercase">
               Total Pembayaran
             </span>
-            <span className="text-base font-extrabold text-sky-700">
+            <span className="text-lg font-black text-sky-800 font-receipt">
               {formatRupiah(receipt.totalAmount)}
             </span>
           </div>
@@ -243,10 +243,10 @@ export const ReceiptCard = React.forwardRef<HTMLDivElement, ReceiptCardProps>(
         {receipt.notes && (
           <div
             onClick={() => handleTap('notes')}
-            className={`py-2 text-[11px] text-slate-600 border-b border-dashed border-slate-200 ${tapClass}`}
+            className={`py-2 text-xs text-slate-800 border-b-2 border-dashed border-slate-300 ${tapClass}`}
           >
-            <span className="font-medium text-slate-500">Catatan: </span>
-            <span className="italic">{receipt.notes}</span>
+            <span className="font-black text-slate-700">Catatan: </span>
+            <span className="font-bold italic">{receipt.notes}</span>
           </div>
         )}
 

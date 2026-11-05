@@ -1,5 +1,5 @@
 // Service Worker for "kirim dana" PWA
-const CACHE_NAME = 'kirim-dana-v7';
+const CACHE_NAME = 'kirim-dana-v8';
 const SHARED_CACHE_NAME = 'kirim-dana-shared';
 
 const PRECACHE_ASSETS = [
