@@ -2,15 +2,41 @@ import { ReceiptData, AppSettings } from '../types/receipt';
 import { formatRupiah } from './numberFormat';
 
 /**
- * Draws a high-resolution, pixel-perfect financial receipt on an HTML5 Canvas.
- * This runs completely offline, has zero CSS/OKLCH dependencies, and outputs
- * razor-sharp PNG images suitable for thermal printers, WhatsApp, and social media.
+ * Safe rounded rectangle drawer using universal Canvas 2D arcTo.
+ * Guarantees 100% compatibility across all Android, iOS, and desktop browsers
+ * without relying on modern ctx.roundRect which fails on older WebViews.
  */
-export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSettings): HTMLCanvasElement {
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+): void {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.arcTo(x + width, y, x + width, y + radius, radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+  ctx.lineTo(x + radius, y + height);
+  ctx.arcTo(x, y + height, x, y + height - radius, radius);
+  ctx.lineTo(x, y + radius);
+  ctx.arcTo(x, y, x + radius, y, radius);
+  ctx.closePath();
+}
+
+/**
+ * Draws a high-resolution, pixel-perfect financial receipt on an HTML5 Canvas.
+ * Outputs razor-sharp PNG images suitable for WhatsApp, Instagram, Telegram,
+ * printing, and image saving.
+ */
+export function generateReceiptCanvas(receipt: ReceiptData, settings?: AppSettings): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   if (!ctx) {
-    throw new Error('Canvas 2D context tidak tersedia di browser ini.');
+    throw new Error('Canvas 2D context tidak tersedia.');
   }
 
   // 720px width = 2x Retina scale for standard mobile 360px container
@@ -18,17 +44,18 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
   const padding = 44;
   const contentWidth = width - padding * 2;
 
-  // Pre-calculate dynamic height
-  let estimatedHeight = 560; // Base header, status, footer, rincian
-  if (receipt.agentTagline) estimatedHeight += 32;
-  if (receipt.agentServices) estimatedHeight += 44;
-  if (receipt.agentLocation) estimatedHeight += 26;
-  if (receipt.agentContact) estimatedHeight += 26;
-  if (receipt.senderName || receipt.senderAccount) estimatedHeight += 150; // Sumber dana block
-  if (receipt.notes && receipt.notes !== 'Transfer Berhasil') estimatedHeight += 45;
-  if (settings.customFooterNote) estimatedHeight += 40;
+  // Determine dynamic height based on presence of fields
+  const hasSumberDana = Boolean(receipt?.senderName || receipt?.senderAccount || receipt?.senderBank);
+  const hasNotes = Boolean(receipt?.notes && receipt.notes !== 'Transfer Berhasil' && receipt.notes !== '-');
+  const hasLocation = Boolean(receipt?.agentLocation);
+  const hasContact = Boolean(receipt?.agentContact);
 
-  const height = Math.max(estimatedHeight, 880);
+  let height = 980;
+  if (hasSumberDana) height += 160;
+  if (hasNotes) height += 50;
+  if (hasLocation) height += 24;
+  if (hasContact) height += 24;
+
   canvas.width = width;
   canvas.height = height;
 
@@ -49,7 +76,7 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, width, 10);
 
-  let y = 48;
+  let y = 52;
 
   // Helper functions
   const drawDashedDivider = (currY: number) => {
@@ -64,7 +91,7 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
     ctx.restore();
   };
 
-  const drawSolidDivider = (currY: number, lineW = 2, color = '#cbd5e1') => {
+  const drawSolidDivider = (currY: number, lineW = 2, color = '#0f172a') => {
     ctx.save();
     ctx.strokeStyle = color;
     ctx.lineWidth = lineW;
@@ -89,17 +116,16 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
 
     const valFontWeight = opts.boldVal ? '700' : '600';
     const fontFam = opts.monoVal
-      ? `'JetBrains Mono', monospace`
+      ? `'JetBrains Mono', 'Courier New', monospace`
       : `'Plus Jakarta Sans', system-ui, -apple-system, sans-serif`;
     ctx.font = `${valFontWeight} ${fontSize}px ${fontFam}`;
     ctx.fillStyle = opts.colorVal || '#0f172a';
     ctx.textAlign = 'right';
 
-    // Measure and wrap if right-side text is very long (e.g. long recipient name)
+    // Handle long right-side text wrapping (e.g. recipient name)
     const maxValW = contentWidth - 210;
     const textW = ctx.measureText(value).width;
     if (textW > maxValW) {
-      // Split into 2 lines
       const words = value.split(' ');
       let line1 = '';
       let line2 = '';
@@ -112,51 +138,52 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
       }
       ctx.fillText(line1, width - padding, currY);
       if (line2) {
-        ctx.fillText(line2, width - padding, currY + fontSize + 4);
-        return currY + fontSize + 30;
+        ctx.fillText(line2, width - padding, currY + fontSize + 6);
+        return currY + fontSize + 34;
       }
     } else {
       ctx.fillText(value, width - padding, currY);
     }
 
-    return currY + 34;
+    return currY + 36;
   };
 
   // --- HEADER: NAMA AGEN & LAYANAN ---
+  const agentName = receipt?.agentName || settings?.defaultAgentName || 'loket ppob Athar digital payment';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#0f172a';
   ctx.font = "800 28px 'Plus Jakarta Sans', system-ui, sans-serif";
-  ctx.fillText(receipt.agentName || 'LOKET PPOB ATHAR DIGITAL PAYMENT', width / 2, y);
-  y += 30;
+  ctx.fillText(agentName.toUpperCase(), width / 2, y);
+  y += 32;
 
   // Tagline
-  const tagline = receipt.agentTagline || settings.defaultAgentTagline || 'gerai transaksi online & multi pembayaran';
+  const tagline = receipt?.agentTagline || settings?.defaultAgentTagline || 'gerai transaksi online & multi pembayaran';
   ctx.fillStyle = '#0284c7';
   ctx.font = "700 18px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.fillText(tagline.toUpperCase(), width / 2, y);
   y += 26;
 
   // Services description
-  const services = receipt.agentServices || settings.defaultAgentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan';
+  const services = receipt?.agentServices || settings?.defaultAgentServices || 'layanan transfer uang tarik tunai & pembayaran tagihan';
   ctx.fillStyle = '#64748b';
   ctx.font = "500 15px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.fillText(services, width / 2, y);
   y += 24;
 
-  if (receipt.agentLocation) {
+  if (receipt?.agentLocation) {
     ctx.font = "500 14px 'Plus Jakarta Sans', system-ui, sans-serif";
     ctx.fillStyle = '#94a3b8';
     ctx.fillText(receipt.agentLocation, width / 2, y);
     y += 20;
   }
-  if (receipt.agentContact) {
+  if (receipt?.agentContact) {
     ctx.font = "600 14px 'Plus Jakarta Sans', system-ui, sans-serif";
     ctx.fillStyle = '#0369a1';
     ctx.fillText(`WA/CS: ${receipt.agentContact}`, width / 2, y);
     y += 20;
   }
 
-  y += 12;
+  y += 8;
   drawDashedDivider(y);
   y += 34;
 
@@ -169,8 +196,7 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
   ctx.fillStyle = '#ecfdf5';
   ctx.strokeStyle = '#10b981';
   ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 20);
+  drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 20);
   ctx.fill();
   ctx.stroke();
 
@@ -178,38 +204,40 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
   ctx.fillStyle = '#047857';
   ctx.font = "700 17px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.fillText('✓  TRANSAKSI BERHASIL', width / 2, y - 1);
-  y += 34;
+  y += 36;
 
   // --- METADATA TRANSAKSI ---
-  y = drawRow('Waktu Transaksi', `${receipt.date} ${receipt.time} WIB`, y, { size: 20 });
-  y = drawRow('No. Referensi', receipt.refNumber, y, { boldVal: true, monoVal: true, size: 21 });
-  y = drawRow('Metode / Saluran', receipt.sourceApp || 'Transfer Bank', y, { size: 20 });
+  const dateStr = receipt?.date || '01/01/2026';
+  const timeStr = receipt?.time ? `${receipt.time} WIB` : '00:00:00 WIB';
+  y = drawRow('Waktu Transaksi', `${dateStr} ${timeStr}`, y, { size: 20 });
+  y = drawRow('No. Referensi', receipt?.refNumber || 'KD-' + Date.now(), y, { boldVal: true, monoVal: true, size: 21 });
+  y = drawRow('Metode / Saluran', receipt?.sourceApp || 'Transfer Bank', y, { size: 20 });
 
   y += 6;
   drawDashedDivider(y);
-  y += 30;
+  y += 32;
 
   // --- SUMBER DANA (PENGIRIM) ---
-  if (receipt.senderName || receipt.senderAccount || receipt.senderBank) {
+  if (hasSumberDana) {
     ctx.font = "700 14px 'Plus Jakarta Sans', system-ui, sans-serif";
     ctx.fillStyle = '#94a3b8';
     ctx.textAlign = 'left';
     ctx.fillText('SUMBER DANA (PENGIRIM)', padding, y);
     y += 28;
 
-    if (receipt.senderName) {
-      y = drawRow('Nama Pengirim', receipt.senderName, y, { boldVal: true, size: 21 });
+    if (receipt?.senderName) {
+      y = drawRow('Nama Pengirim', receipt.senderName, y, { boldVal: true, size: 22 });
     }
-    if (receipt.senderBank) {
-      y = drawRow('Bank Asal', receipt.senderBank, y, { size: 20 });
+    if (receipt?.senderBank) {
+      y = drawRow('Bank Asal', receipt.senderBank, y, { size: 21 });
     }
-    if (receipt.senderAccount) {
-      y = drawRow('No. Rekening Asal', receipt.senderAccount, y, { monoVal: true, size: 21 });
+    if (receipt?.senderAccount) {
+      y = drawRow('No. Rekening Asal', receipt.senderAccount, y, { monoVal: true, size: 22 });
     }
 
-    y += 4;
+    y += 6;
     drawDashedDivider(y);
-    y += 30;
+    y += 32;
   }
 
   // --- DETAIL TUJUAN TRANSFER ---
@@ -219,9 +247,9 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
   ctx.fillText('DETAIL TUJUAN TRANSFER', padding, y);
   y += 28;
 
-  y = drawRow('Bank / E-Wallet', receipt.bankName || 'BANK TUJUAN', y, { boldVal: true, colorVal: '#0369a1', size: 22 });
-  y = drawRow('No. Rekening / ID', receipt.accountNumber || '-', y, { boldVal: true, monoVal: true, size: 22 });
-  y = drawRow('Nama Penerima', receipt.recipientName || 'PENERIMA TRANSFER', y, { boldVal: true, size: 22 });
+  y = drawRow('Bank / E-Wallet', receipt?.bankName || 'BANK TUJUAN', y, { boldVal: true, colorVal: '#0369a1', size: 22 });
+  y = drawRow('No. Rekening / ID', receipt?.accountNumber || '-', y, { boldVal: true, monoVal: true, size: 22 });
+  y = drawRow('Nama Penerima', receipt?.recipientName || 'PENERIMA TRANSFER', y, { boldVal: true, size: 22 });
 
   y += 8;
   drawSolidDivider(y, 2, '#0f172a');
@@ -234,10 +262,14 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
   ctx.fillText('RINCIAN PEMBAYARAN', padding, y);
   y += 28;
 
-  y = drawRow('Jumlah Transfer', formatRupiah(receipt.amount), y, { boldVal: true, size: 22 });
-  y = drawRow('Biaya Admin', formatRupiah(receipt.adminFee), y, { size: 21 });
+  const amountVal = Number(receipt?.amount) || 0;
+  const adminVal = Number(receipt?.adminFee) || 0;
+  const totalVal = Number(receipt?.totalAmount) || (amountVal + adminVal);
 
-  y += 4;
+  y = drawRow('Jumlah Transfer', formatRupiah(amountVal), y, { boldVal: true, size: 22 });
+  y = drawRow('Biaya Admin', formatRupiah(adminVal), y, { size: 21 });
+
+  y += 6;
   drawDashedDivider(y);
   y += 36;
 
@@ -247,17 +279,17 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
   ctx.textAlign = 'left';
   ctx.fillText('TOTAL BAYAR', padding, y);
 
-  ctx.font = "800 32px 'JetBrains Mono', monospace";
+  ctx.font = "800 32px 'JetBrains Mono', 'Courier New', monospace";
   ctx.fillStyle = '#0284c7';
   ctx.textAlign = 'right';
-  ctx.fillText(formatRupiah(receipt.totalAmount), width - padding, y);
-  y += 40;
+  ctx.fillText(formatRupiah(totalVal), width - padding, y);
+  y += 42;
 
   drawSolidDivider(y, 2, '#0f172a');
-  y += 30;
+  y += 32;
 
   // --- CATATAN (IF ANY) ---
-  if (receipt.notes && receipt.notes !== 'Transfer Berhasil') {
+  if (hasNotes) {
     ctx.font = "500 18px 'Plus Jakarta Sans', system-ui, sans-serif";
     ctx.fillStyle = '#64748b';
     ctx.textAlign = 'left';
@@ -269,13 +301,14 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
 
   // --- STAMP LUNAS (WATERMARK STAMP) ---
   ctx.save();
-  ctx.translate(width - 160, y + 40);
+  ctx.translate(width - 150, y + 42);
   ctx.rotate((-12 * Math.PI) / 180);
-  ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+  ctx.strokeStyle = 'rgba(16, 185, 129, 0.45)';
   ctx.lineWidth = 3;
-  ctx.strokeRect(-80, -25, 160, 50);
-  ctx.fillStyle = 'rgba(16, 185, 129, 0.4)';
-  ctx.font = "800 24px 'Plus Jakarta Sans', system-ui, sans-serif";
+  drawRoundedRect(ctx, -75, -24, 150, 48, 8);
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(16, 185, 129, 0.45)';
+  ctx.font = "800 22px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.textAlign = 'center';
   ctx.fillText('LUNAS / SAH', 0, 8);
   ctx.restore();
@@ -285,7 +318,7 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
   ctx.font = "500 15px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.fillStyle = '#64748b';
 
-  const footerText = settings.customFooterNote || 'Terima kasih telah bertransaksi di Agen kami.\nStruk ini adalah bukti pembayaran yang sah.';
+  const footerText = settings?.customFooterNote || 'Terima kasih telah bertransaksi di Agen kami.\nStruk ini adalah bukti pembayaran yang sah.';
   const footerLines = footerText.split('\n');
   for (const line of footerLines) {
     ctx.fillText(line, width / 2, y);
@@ -295,7 +328,7 @@ export function generateReceiptCanvas(receipt: ReceiptData, settings: AppSetting
   y += 10;
   ctx.font = "600 13px 'Plus Jakarta Sans', system-ui, sans-serif";
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText(`Cetak Digital via PWA kirim dana • ${receipt.date} ${receipt.time}`, width / 2, y);
+  ctx.fillText(`Cetak Digital via PWA kirim dana • ${dateStr} ${timeStr}`, width / 2, y);
 
   return canvas;
 }

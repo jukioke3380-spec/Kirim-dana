@@ -3,7 +3,7 @@ import { ReceiptData, AppSettings } from '../types/receipt';
 import { ReceiptCard } from './ReceiptCard';
 import { ReceiptEditModal } from './ReceiptEditModal';
 import { buildReceiptEscPos, sendEscPosToPrinter, connectBluetoothPrinter } from '../utils/bluetoothPrinter';
-import { downloadReceiptImage, shareReceiptImage, buildWhatsAppCaption } from '../utils/exportImage';
+import { downloadReceiptImage, shareReceiptImage, buildWhatsAppCaption, shareDirectToWhatsApp } from '../utils/exportImage';
 import confetti from 'canvas-confetti';
 import {
   Printer,
@@ -16,6 +16,7 @@ import {
   Eye,
   AlertTriangle,
   RotateCcw,
+  Send,
 } from 'lucide-react';
 
 interface ReceiptPreviewViewProps {
@@ -107,19 +108,17 @@ export const ReceiptPreviewView: React.FC<ReceiptPreviewViewProps> = ({
   };
 
   const handleDownloadPng = async () => {
-    if (!receiptRef.current) return;
     try {
       setIsExporting(true);
       setStatusMessage(null);
-      await downloadReceiptImage(
-        receiptRef.current,
-        `struk-${receipt.recipientName.replace(/\s+/g, '_')}-${receipt.refNumber}.png`
-      );
+      const fileName = `struk-${(receipt.recipientName || 'transfer').replace(/\s+/g, '_')}-${receipt.refNumber || Date.now()}.png`;
+      await downloadReceiptImage(receipt, settings, fileName);
       setStatusMessage({
         type: 'success',
-        text: 'Gambar struk PNG resolusi tinggi berhasil disimpan ke galeri/unduhan.',
+        text: 'Gambar struk PNG resolusi tinggi berhasil disimpan ke galeri/unduhan perangkat Anda.',
       });
     } catch (err: any) {
+      console.error('Download error:', err);
       setStatusMessage({ type: 'error', text: err.message || 'Gagal menyimpan gambar.' });
     } finally {
       setIsExporting(false);
@@ -127,15 +126,14 @@ export const ReceiptPreviewView: React.FC<ReceiptPreviewViewProps> = ({
   };
 
   const handleSharePng = async () => {
-    if (!receiptRef.current) return;
     try {
       setIsExporting(true);
       setStatusMessage(null);
-      const res = await shareReceiptImage(receiptRef.current, receipt);
+      const res = await shareReceiptImage(receipt, settings);
       if (res.sharedViaNative) {
         setStatusMessage({
           type: 'success',
-          text: 'Struk berhasil dibagikan.',
+          text: 'Struk berhasil dibagikan ke media sosial.',
         });
       } else if (res.error) {
         setStatusMessage({
@@ -144,7 +142,25 @@ export const ReceiptPreviewView: React.FC<ReceiptPreviewViewProps> = ({
         });
       }
     } catch (err: any) {
+      console.error('Share error:', err);
       setStatusMessage({ type: 'error', text: err.message || 'Gagal membagikan struk.' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDirectWhatsApp = async () => {
+    try {
+      setIsExporting(true);
+      setStatusMessage(null);
+      await shareDirectToWhatsApp(receipt, settings);
+      setStatusMessage({
+        type: 'success',
+        text: 'WhatsApp terbuka & struk gambar PNG telah diunduh untuk siap dilampirkan.',
+      });
+    } catch (err: any) {
+      console.error('WhatsApp direct error:', err);
+      setStatusMessage({ type: 'error', text: err.message || 'Gagal membuka WhatsApp.' });
     } finally {
       setIsExporting(false);
     }
@@ -236,49 +252,61 @@ export const ReceiptPreviewView: React.FC<ReceiptPreviewViewProps> = ({
 
         {/* Share & Download Grid */}
         <div className="grid grid-cols-2 gap-2">
-          {/* Bagikan ke Medsos (PNG) */}
-          <button
-            onClick={handleSharePng}
-            disabled={isExporting}
-            className="py-3 px-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-          >
-            <Share2 className="w-4 h-4 text-sky-600" />
-            <span>Bagikan Medsos</span>
-          </button>
-
           {/* Simpan Gambar PNG */}
           <button
             onClick={handleDownloadPng}
             disabled={isExporting}
-            className="py-3 px-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            className="py-3 px-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
           >
             <Download className="w-4 h-4 text-sky-600" />
             <span>Simpan PNG</span>
           </button>
+
+          {/* Bagikan ke Medsos (PNG) */}
+          <button
+            onClick={handleSharePng}
+            disabled={isExporting}
+            className="py-3 px-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+          >
+            <Share2 className="w-4 h-4 text-sky-600" />
+            <span>Bagikan Medsos</span>
+          </button>
         </div>
 
         {/* WhatsApp & Scan Lagi Bar */}
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
+          {/* Kirim langsung ke WhatsApp */}
+          <button
+            onClick={handleDirectWhatsApp}
+            disabled={isExporting}
+            className="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>Kirim WhatsApp</span>
+          </button>
+
+          {/* Salin Teks Format WhatsApp */}
           <button
             onClick={handleCopyWhatsApp}
-            className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+            className="py-2.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
           >
             {copiedCaption ? (
               <Check className="w-3.5 h-3.5 text-emerald-600" />
             ) : (
               <Copy className="w-3.5 h-3.5 text-emerald-600" />
             )}
-            <span>{copiedCaption ? 'Teks Tersalin!' : 'Salin Chat WA'}</span>
-          </button>
-
-          <button
-            onClick={onOpenScanner}
-            className="py-2.5 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-            <span>Pindai Lagi</span>
+            <span>{copiedCaption ? 'Tersalin!' : 'Salin Chat WA'}</span>
           </button>
         </div>
+
+        {/* Scan Lagi Button */}
+        <button
+          onClick={onOpenScanner}
+          className="w-full py-2.5 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+        >
+          <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+          <span>Pindai Bukti Lain</span>
+        </button>
       </div>
 
       {/* Toggle View Original Scanned Image if available */}
